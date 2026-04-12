@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#111827">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Pæn Kørsel</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #111827; --card: #1f2937; --border: #374151; --text: #f9fafb; --text-dim: #9ca3af;
+            --green: #22c55e; --green-dim: #166534; --yellow: #eab308; --yellow-dim: #854d0e;
+            --red: #ef4444; --red-dim: #991b1b; --radius: 12px; --shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes popIn { 0% { transform: translate(-50%,-50%) scale(0.5); opacity: 0; } 70% { transform: translate(-50%,-50%) scale(1.05); opacity: 1; } 100% { transform: translate(-50%,-50%) scale(1); opacity: 1; } }
+        @keyframes checkmark { 0% { stroke-dashoffset: 100; } 100% { stroke-dashoffset: 0; } }
+        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .container { max-width: 600px; margin: 0 auto; padding: 12px; min-height: 100vh; display: flex; flex-direction: column; gap: 12px; }
+        header { text-align: center; padding: 8px 0; }
+        header h1 { font-size: 1.8rem; font-weight: 900; letter-spacing: -0.03em; }
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 6px; transition: all 0.3s ease; }
+        .status-badge.inactive { background: var(--border); color: var(--text-dim); }
+        .status-badge.active { background: var(--green-dim); color: var(--green); }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+        .score-display { text-align: center; }
+        .score-header { display: flex; justify-content: center; align-items: center; gap: 12px; margin-bottom: 8px; }
+        #carIcon { width: 48px; height: 48px; }
+        .score-number { font-size: 5.5rem; font-weight: 900; line-height: 1; transition: color 0.3s ease; text-shadow: 0 0 30px currentColor; }
+        .score-label { font-size: 0.875rem; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px; }
+        .score-meta { display: flex; justify-content: center; gap: 16px; margin-top: 8px; font-size: 0.8rem; color: var(--text-dim); }
+        .score-meta span { display: flex; align-items: center; gap: 4px; }
+        .score-bar { height: 8px; background: var(--border); border-radius: 4px; margin-top: 12px; overflow: hidden; }
+        .score-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s ease, background 0.3s ease; width: 100%; }
+        .accel-circle-container { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+        .accel-circle { position: relative; width: 300px; height: 300px; }
+        .accel-circle svg { transform: rotate(-90deg); }
+        .accel-circle .bg-circle { fill: none; stroke: var(--border); stroke-width: 14; }
+        .accel-circle .x-circle { fill: none; stroke: var(--red); stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 0.2s ease; }
+        .accel-circle .y-circle { fill: none; stroke: var(--yellow); stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 0.2s ease; }
+        .accel-circle .z-circle { fill: none; stroke: var(--green); stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 0.2s ease; }
+        .accel-circle .circle-labels { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .circle-label { position: absolute; font-size: 0.65rem; font-weight: 700; color: var(--text-dim); }
+        .circle-label.plus { color: var(--green); }
+        .circle-label.minus { color: var(--red); }
+        .accel-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+        .accel-center-value { font-size: 1.5rem; font-weight: 700; }
+        .accel-center-label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; }
+        .accel-legend { display: flex; gap: 16px; font-size: 0.8rem; }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .legend-dot.x { background: var(--red); }
+        .legend-dot.y { background: var(--yellow); }
+        .legend-dot.z { background: var(--green); }
+        .axis-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; text-align: center; }
+        .axis-item { padding: 12px; background: rgba(255,255,255,0.03); border-radius: var(--radius); }
+        .axis-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+        .axis-label.x { color: var(--red); }
+        .axis-label.y { color: var(--yellow); }
+        .axis-label.z { color: var(--green); }
+        .axis-value { font-size: 1.4rem; font-weight: 700; transition: color 0.2s; }
+        .axis-unit { font-size: 0.7rem; color: var(--text-dim); margin-top: 2px; }
+        .axis-feedback { font-size: 0.7rem; color: var(--yellow); margin-top: 4px; height: 18px; }
+        .axis-threshold { font-size: 0.6rem; color: var(--text-dim); margin-top: 4px; opacity: 0.7; }
+        .graph-container { height: 120px; position: relative; }
+        .graph-canvas { width: 100%; height: 100%; border-radius: 8px; }
+        .controls { display: flex; gap: 12px; flex-wrap: wrap; }
+        .btn { flex: 1; min-width: 120px; padding: 16px; border: none; border-radius: var(--radius); font-family: inherit; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.25s ease; transform: translateY(0); }
+        .btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        .btn:active { transform: translateY(1px); filter: brightness(0.9); }
+        .btn-start { background: var(--green); color: #000; box-shadow: 0 4px 12px rgba(34,197,94,0.3); }
+        .btn-stop { background: var(--red-dim); color: var(--red); box-shadow: 0 4px 12px rgba(239,68,68,0.2); }
+        .btn-reset { background: var(--yellow-dim); color: var(--yellow); box-shadow: 0 4px 12px rgba(234,179,8,0.2); }
+        .btn-enable { background: #3b82f6; color: white; box-shadow: 0 4px 12px rgba(59,130,246,0.3); }
+        .btn-export { background: var(--border); color: var(--text); box-shadow: none; flex: 0 0 auto; min-width: auto; padding: 10px 14px; font-size: 0.85rem; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; filter: none; box-shadow: none; }
+        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 8px; flex-wrap: wrap; }
+        .history-title-group { display: flex; align-items: center; gap: 8px; }
+        .history-title { font-size: 0.875rem; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+        .history-count { font-size: 0.7rem; background: var(--border); color: var(--text-dim); padding: 2px 8px; border-radius: 999px; }
+        .history-right { display: flex; align-items: center; gap: 8px; }
+        .history-avg { font-size: 0.8rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; }
+        .history-list { display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; }
+        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: rgba(255,255,255,0.03); border-radius: var(--radius); font-size: 0.85rem; }
+        .history-left { display: flex; align-items: center; gap: 8px; }
+        .history-delete { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 1.2rem; padding: 4px 8px; border-radius: 6px; transition: all 0.2s; }
+        .history-delete:hover { background: var(--red-dim); color: var(--red); }
+        .history-date { color: var(--text-dim); font-size: 0.8rem; }
+        .history-score { font-weight: 700; font-size: 0.95rem; }
+        .history-empty { text-align: center; color: var(--text-dim); padding: 20px; font-size: 0.875rem; }
+        .no-trips-message { text-align: center; color: var(--text-dim); padding: 12px; font-size: 0.8rem; }
+        .app-footer { text-align: center; padding: 8px; font-size: 0.7rem; color: var(--text-dim); opacity: 0.5; }
+        .history-trend { font-size: 0.9rem; margin-left: 6px; }
+        .history-trend.up { color: var(--green); }
+        .history-trend.down { color: var(--red); }
+        .speed-estimate { font-size: 0.8rem; color: var(--text-dim); margin-top: 2px; }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .modal-overlay.hidden { display: none; }
+        .modal { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; max-width: 320px; text-align: center; }
+        .modal h2 { font-size: 1.2rem; margin-bottom: 12px; }
+        .modal p { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 20px; line-height: 1.5; }
+        .modal .btn { width: 100%; }
+        #onboardingTip { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1f2937; border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; max-width: 340px; width: calc(100% - 32px); z-index: 900; box-shadow: 0 8px 24px rgba(0,0,0,0.4); animation: slideUp 0.4s ease; }
+        #onboardingTip.hidden { display: none; }
+        .tip-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+        .tip-list { list-style: none; font-size: 0.8rem; color: var(--text-dim); line-height: 1.7; }
+        .tip-list li::before { content: '• '; color: var(--green); }
+        #tipDismiss { margin-top: 12px; width: 100%; padding: 10px; background: var(--green); color: #000; border: none; border-radius: 8px; font-family: inherit; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+        #tripSummary { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 1100; padding: 20px; }
+        #tripSummary.hidden { display: none; }
+        .summary-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 32px 24px; max-width: 320px; width: 100%; text-align: center; box-shadow: 0 12px 40px rgba(0,0,0,0.5); animation: slideDown 0.4s ease; }
+        .summary-checkmark { width: 80px; height: 80px; margin: 0 auto 16px; }
+        .summary-checkmark circle { fill: var(--green-dim); }
+        .summary-checkmark path { stroke: var(--green); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; fill: none; stroke-dasharray: 100; animation: checkmark 0.6s ease 0.3s forwards; stroke-dashoffset: 100; }
+        .summary-score-circle { width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 900; margin: 0 auto 8px; animation: popIn 0.5s ease 0.1s both; }
+        .summary-score-label { font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px; }
+        .summary-message { font-size: 1.4rem; font-weight: 900; margin-bottom: 20px; }
+        .summary-stats { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+        .summary-stat { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(255,255,255,0.04); border-radius: 8px; font-size: 0.9rem; }
+        .summary-stat-label { color: var(--text-dim); }
+        .summary-stat-value { font-weight: 700; }
+        #summaryDismiss { width: 100%; padding: 14px; background: var(--green); color: #000; border: none; border-radius: var(--radius); font-family: inherit; font-size: 1rem; font-weight: 700; cursor: pointer; }
+        @media (orientation: landscape) {
+            .container { max-width: 900px; flex-direction: row; flex-wrap: wrap; align-items: flex-start; padding: 16px; gap: 12px; }
+            header { width: 100%; }
+            .card.score-display { flex: 0 0 220px; }
+            .card.accel-card { flex: 1; min-width: 280px; }
+            .card.graph-card { flex: 1; min-width: 280px; }
+            .card.controls-card { flex: 0 0 100%; }
+            .card.history-card { flex: 0 0 100%; }
+            .accel-circle { width: 240px; height: 240px; }
+            .score-number { font-size: 4rem; }
+            #onboardingTip { bottom: auto; top: 24px; transform: translateX(-50%); }
+        }
+        @media (min-width: 768px) {
+            .container { max-width: 900px; }
+            .accel-circle { width: 260px; height: 260px; }
+            .summary-card { max-width: 380px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="permissionModal" class="modal-overlay hidden">
+        <div class="modal">
+            <h2>📱 Aktivér Sensorer</h2>
+            <p>For at måle din kørsel skal appen have adgang til telefonens accelerometer og gyroskop.</p>
+            <button class="btn btn-enable" id="grantPermissionBtn">Giv Tilladelse</button>
+        </div>
+    </div>
+
+    <div id="onboardingTip" class="hidden">
+        <div class="tip-title">💡 Sådan bruges appen</div>
+        <ul class="tip-list">
+            <li>Placer telefonen i en bil-holder med skærmen opad</li>
+            <li>Start turen når du begynder at køre</li>
+            <li>Scoren falder ved hård acceleration, sving og opbremsning</li>
+        </ul>
+        <button id="tipDismiss">Godt, jeg har forstået!</button>
+    </div>
+
+    <div id="tripSummary" class="hidden">
+        <div class="summary-card">
+            <svg class="summary-checkmark" viewBox="0 0 80 80"><circle cx="40" cy="40" r="38"/><path d="M24 42 L34 52 L56 30"/></svg>
+            <div class="summary-score-circle" id="summaryScoreCircle">100</div>
+            <div class="summary-score-label">Final Score</div>
+            <div class="summary-message" id="summaryMessage">Perfekt!</div>
+            <div class="summary-stats">
+                <div class="summary-stat"><span class="summary-stat-label">⏱ Varighed</span><span class="summary-stat-value" id="summaryDuration">0:00</span></div>
+                <div class="summary-stat"><span class="summary-stat-label">💯 Score</span><span class="summary-stat-value" id="summaryScoreValue">100</span></div>
+                <div class="summary-stat"><span class="summary-stat-label">🚗 Gns. hastighed</span><span class="summary-stat-value" id="summaryAvgSpeed">— km/t</span></div>
+            </div>
+            <button id="summaryDismiss">Gem Tur</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>🚗 Pæn Kørsel</h1>
+            <div id="statusBadge" class="status-badge inactive">Klar</div>
+        </header>
+        <div class="card score-display">
+            <div class="score-header">
+                <canvas id="carIcon" width="96" height="96"></canvas>
+                <div class="score-number" id="scoreNumber">100</div>
+            </div>
+            <div class="score-label">Tur Score</div>
+            <div class="score-bar"><div class="score-bar-fill" id="scoreBarFill" style="background: #22c55e;"></div></div>
+            <div class="score-meta">
+                <span id="tripTimer">⏱ 00:00</span>
+                <span id="tripAvg">💯 Gns: —</span>
+            </div>
+            <div class="speed-estimate" id="speedEstimate">Est. — km/t</div>
+        </div>
+        <div class="card accel-card">
+            <div class="accel-circle-container">
+                <div class="accel-circle">
+                    <svg viewBox="0 0 300 300">
+                        <circle class="bg-circle" cx="150" cy="150" r="128"/>
+                        <circle class="x-circle" id="xCircle" cx="150" cy="150" r="128" stroke-dasharray="804" stroke-dashoffset="804"/>
+                        <circle class="y-circle" id="yCircle" cx="150" cy="150" r="105" stroke-dasharray="660" stroke-dashoffset="660"/>
+                        <circle class="z-circle" id="zCircle" cx="150" cy="150" r="82" stroke-dasharray="515" stroke-dashoffset="515"/>
+                    </svg>
+                    <div class="circle-labels">
+                        <div class="circle-label plus" style="top: 2px; left: 50%; transform: translateX(-50%);">+</div>
+                        <div class="circle-label minus" style="bottom: 2px; left: 50%; transform: translateX(-50%);">−</div>
+                        <div class="circle-label minus" style="top: 50%; left: 2px; transform: translateY(-50%);">−</div>
+                        <div class="circle-label plus" style="top: 50%; right: 2px; transform: translateY(-50%);">+</div>
+                    </div>
+                    <div class="accel-center">
+                        <div class="accel-center-value" id="totalAccel">9.8</div>
+                        <div class="accel-center-label">m/s²</div>
+                    </div>
+                </div>
+                <div class="accel-legend">
+                    <div class="legend-item"><div class="legend-dot x"></div><span>X (sider)</span></div>
+                    <div class="legend-item"><div class="legend-dot y"></div><span>Y (sving)</span></div>
+                    <div class="legend-item"><div class="legend-dot z"></div><span>Z (frem/tilb)</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="card" style="padding: 12px 16px;">
+            <div class="axis-grid">
+                <div class="axis-item">
+                    <div class="axis-label x">X (sider)</div>
+                    <div class="axis-value" id="xValue">0.0</div>
+                    <div class="axis-unit">m/s²</div>
+                    <div class="axis-feedback" id="xFeedback"></div>
+                    <div class="axis-threshold">Normal: ±1.5 | Advarsel: &gt;2.0</div>
+                </div>
+                <div class="axis-item">
+                    <div class="axis-label y">Y (sving)</div>
+                    <div class="axis-value" id="yValue">0.0</div>
+                    <div class="axis-unit">m/s²</div>
+                    <div class="axis-feedback" id="yFeedback"></div>
+                    <div class="axis-threshold">Normal: ±1.5 | Advarsel: &gt;2.0</div>
+                </div>
+                <div class="axis-item">
+                    <div class="axis-label z">Z (frem/tilb)</div>
+                    <div class="axis-value" id="zValue">9.8</div>
+                    <div class="axis-unit">m/s²</div>
+                    <div class="axis-feedback" id="zFeedback"></div>
+                    <div class="axis-threshold">Normal: ±1.5 | Advarsel: &gt;2.0</div>
+                </div>
+            </div>
+        </div>
+        <div class="card graph-card">
+            <div style="font-size:0.75rem;font-weight:600;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">Acceleration (sidste 50)</div>
+            <div class="graph-container"><canvas class="graph-canvas" id="graphCanvas"></canvas></div>
+        </div>
+        <div class="card controls-card">
+            <div class="controls">
+                <button class="btn btn-enable" id="enableSensorsBtn">📱 Aktivér Sensorer</button>
+                <button class="btn btn-start" id="startBtn" disabled>▶ Start Tur</button>
+                <button class="btn btn-reset" id="resetBtn" disabled>🔄 Gen start</button>
+                <button class="btn btn-stop" id="stopBtn" disabled>■ Stop Tur</button>
+            </div>
+        </div>
+        <div class="card history-card">
+            <div class="history-header">
+                <div class="history-title-group">
+                    <div class="history-title">📋 Tur Historik</div>
+                    <div class="history-count" id="historyCount">0 ture</div>
+                </div>
+                <div class="history-right">
+                    <div class="history-avg" id="avgScore">—</div>
+                    <button class="btn btn-export" id="exportBtn" title="Exportér data">📤 Exportér</button>
+                </div>
+            </div>
+            <div class="history-list" id="historyList">
+                <div class="no-trips-message">Ingen ture endnu. Start din første tur!</div>
+            </div>
+        </div>
+    </div>
+    <div class="app-footer">Pæn Kørsel v5.0</div>
+
+    <script>
+        const BASELINE = 9.8, MAX_DEVIATION = 5.0, GRAPH_SAMPLES = 50, APP_VERSION = 'v5.0', SAMPLE_INTERVAL_MS = 100;
+        const C_GREEN = '#22c55e', C_YELLOW = '#eab308', C_RED = '#ef4444';
+
+        let isRecording = false, score = 100, startTime = null, accelHistory = [];
+        let xBuffer = [], yBuffer = [], zBuffer = [];
+        let lastX = 0, lastY = 0, lastZ = BASELINE, lastAccelMag = BASELINE;
+        let motionListener = null, timerInterval = null, sensorsEnabled = false, estimatedSpeed = 0;
+        let lastCircleUpdate = 0, lastGraphUpdate = 0;
+        const GRAPH_INTERVAL_MS = 100;
+
+        const scoreNumber = document.getElementById('scoreNumber');
+        const scoreBarFill = document.getElementById('scoreBarFill');
+        const statusBadge = document.getElementById('statusBadge');
+        const xValue = document.getElementById('xValue'), yValue = document.getElementById('yValue'), zValue = document.getElementById('zValue');
+        const xFeedback = document.getElementById('xFeedback'), yFeedback = document.getElementById('yFeedback'), zFeedback = document.getElementById('zFeedback');
+        const totalAccel = document.getElementById('totalAccel');
+        const xCircle = document.getElementById('xCircle'), yCircle = document.getElementById('yCircle'), zCircle = document.getElementById('zCircle');
+        const graphCanvas = document.getElementById('graphCanvas');
+        const ctx = graphCanvas.getContext('2d');
+        const startBtn = document.getElementById('startBtn'), stopBtn = document.getElementById('stopBtn'), resetBtn = document.getElementById('resetBtn');
+        const enableSensorsBtn = document.getElementById('enableSensorsBtn');
+        const historyList = document.getElementById('historyList'), avgScoreEl = document.getElementById('avgScore'), historyCountEl = document.getElementById('historyCount');
+        const tripTimerEl = document.getElementById('tripTimer'), tripAvgEl = document.getElementById('tripAvg');
+        const permissionModal = document.getElementById('permissionModal'), grantPermissionBtn = document.getElementById('grantPermissionBtn');
+        const exportBtn = document.getElementById('exportBtn'), tripSummary = document.getElementById('tripSummary');
+        const summaryDismiss = document.getElementById('summaryDismiss');
+        const tipDismiss = document.getElementById('tipDismiss'), onboardingTip = document.getElementById('onboardingTip');
+
+        // --- Onboarding ---
+        function checkOnboarding() {
+            if (!localStorage.getItem('niceDrive_onboarded')) {
+                onboardingTip.classList.remove('hidden');
+            }
+        }
+        tipDismiss.addEventListener('click', function() {
+            localStorage.setItem('niceDrive_onboarded', '1');
+            onboardingTip.classList.add('hidden');
+        });
+
+        // --- Car icon ---
+        function drawCarIcon() {
+            const canvas = document.getElementById('carIcon'), c = canvas.getContext('2d');
+            const w = canvas.width, h = canvas.height;
+            c.clearRect(0, 0, w, h);
+            c.fillStyle = '#3b82f6';
+            c.beginPath(); c.roundRect(w*0.15, h*0.35, w*0.7, h*0.35, 8); c.fill();
+            c.fillStyle = '#2563eb';
+            c.beginPath(); c.roundRect(w*0.28, h*0.2, w*0.44, h*0.2, 6); c.fill();
+            c.fillStyle = '#1f2937';
+            c.beginPath(); c.arc(w*0.28, h*0.7, w*0.1, 0, Math.PI*2); c.fill();
+            c.beginPath(); c.arc(w*0.72, h*0.7, w*0.1, 0, Math.PI*2); c.fill();
+            if (isRecording && score < 100) {
+                const arrowColor = score >= 80 ? C_GREEN : score >= 50 ? C_YELLOW : C_RED;
+                c.fillStyle = arrowColor;
+                c.beginPath(); c.moveTo(w*0.85, h*0.38); c.lineTo(w*0.92, h*0.38); c.lineTo(w*0.885, h*0.28); c.closePath(); c.fill();
+                c.beginPath(); c.moveTo(w*0.85, h*0.62); c.lineTo(w*0.92, h*0.62); c.lineTo(w*0.885, h*0.72); c.closePath(); c.fill();
+            }
+        }
+
+        function resizeCanvas() {
+            const rect = graphCanvas.getBoundingClientRect();
+            graphCanvas.width = rect.width * window.devicePixelRatio;
+            graphCanvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        function getColor(v) { const a = Math.abs(v); return a < 2 ? C_GREEN : a < 4 ? C_YELLOW : C_RED; }
+        function getScoreColor(s) { return s >= 80 ? C_GREEN : s >= 50 ? C_YELLOW : C_RED; }
+
+        function updateScoreDisplay() {
+            scoreNumber.textContent = Math.round(score);
+            scoreNumber.style.color = getScoreColor(score);
+            scoreBarFill.style.width = score + '%';
+            scoreBarFill.style.background = getScoreColor(score);
+            drawCarIcon();
+        }
+
+        function updateCircle(circle, value, maxR) {
+            const circ = 2 * Math.PI * maxR;
+            const norm = Math.min(Math.abs(value) / (MAX_DEVIATION * 2), 1);
+            circle.style.strokeDashoffset = circ * (1 - norm);
+        }
+
+        function estimateSpeed(x, y, z) {
+            const total = Math.sqrt(x*x + y*y + z*z);
+            const accelDelta = Math.abs(total - lastAccelMag);
+            lastAccelMag = total;
+            if (accelDelta < 0.1) {
+                estimatedSpeed = Math.max(0, estimatedSpeed - 2);
+            } else if (total > BASELINE + 0.5) {
+                estimatedSpeed = Math.min(150, estimatedSpeed + accelDelta * 3);
+            } else if (total < BASELINE - 0.5) {
+                estimatedSpeed = Math.max(0, estimatedSpeed - accelDelta * 5);
+            }
+            return Math.round(estimatedSpeed);
+        }
+
+        function updateSpeedDisplay(speed) {
+            const speedEl = document.getElementById('speedEstimate');
+            if (speed > 0) {
+                speedEl.textContent = 'Est. ' + speed + ' km/t';
+                speedEl.style.color = speed > 110 ? C_RED : speed > 90 ? C_YELLOW : 'var(--text-dim)';
+            } else {
+                speedEl.textContent
