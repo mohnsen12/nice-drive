@@ -84,6 +84,7 @@
                     <div class="axis-label">Gas/Bremse</div>
                 </div>
             </div>
+            <canvas id="graphCanvas" style="width:100%;height:80px;background:#111827;border-radius:8px;margin-top:10px"></canvas>
         </div>
         
         <div class="card">
@@ -119,13 +120,17 @@
     
     <script>
         const C_GREEN = '#22c55e', C_YELLOW = '#eab308', C_RED = '#ef4444';
+        const MAX_HISTORY = 60;
         let isRecording = false, score = 100, startTime = null, timerInterval = null;
+        let xHistory = [], yHistory = [], zHistory = [];
         let trips = JSON.parse(localStorage.getItem('niceDrive_trips') || '[]');
         
         const scoreNum = document.getElementById('scoreNum');
         const scoreBar = document.getElementById('scoreBar');
         const status = document.getElementById('status');
         const timer = document.getElementById('timer');
+        const graphCanvas = document.getElementById('graphCanvas');
+        const graphCtx = graphCanvas.getContext('2d');
         const xVal = document.getElementById('xVal');
         const yVal = document.getElementById('yVal');
         const zVal = document.getElementById('zVal');
@@ -223,23 +228,60 @@
             }).join('');
         }
         
+        function drawGraph() {
+            const w = graphCanvas.width = graphCanvas.offsetWidth * 2;
+            const h = graphCanvas.height = graphCanvas.offsetHeight * 2;
+            graphCtx.clearRect(0, 0, w, h);
+            const midY = h / 2;
+            const maxVal = 10;
+            function drawLine(history, color) {
+                if (history.length < 2) return;
+                graphCtx.strokeStyle = color;
+                graphCtx.lineWidth = 3;
+                graphCtx.beginPath();
+                for (let i = 0; i < history.length; i++) {
+                    const x = (i / MAX_HISTORY) * w;
+                    const y = midY - (history[i] / maxVal) * (h / 2);
+                    if (i === 0) graphCtx.moveTo(x, y);
+                    else graphCtx.lineTo(x, y);
+                }
+                graphCtx.stroke();
+            }
+            drawLine(xHistory, '#ef4444');
+            drawLine(yHistory, '#eab308');
+            drawLine(zHistory, '#22c55e');
+            // Center line
+            graphCtx.strokeStyle = '#374151';
+            graphCtx.lineWidth = 1;
+            graphCtx.beginPath();
+            graphCtx.moveTo(0, midY);
+            graphCtx.lineTo(w, midY);
+            graphCtx.stroke();
+        }
+        
         function onMotion(event) {
             const acc = event.accelerationIncludingGravity;
             if (!acc) return;
             const x = acc.x || 0;
             const y = acc.y || 0;
             const z = acc.z || 9.8;
+            xHistory.push(x);
+            yHistory.push(y);
+            zHistory.push(z - 9.8);
+            if (xHistory.length > MAX_HISTORY) { xHistory.shift(); yHistory.shift(); zHistory.shift(); }
             updateDisplay(x, y, z);
+            drawGraph();
             if (isRecording) {
-                // Calculate penalty
                 let penalty = 0;
                 if (Math.abs(x) > 2) penalty += (Math.abs(x) - 2) * 3;
                 if (Math.abs(y) > 2) penalty += (Math.abs(y) - 2) * 4;
                 const zDev = Math.abs(z - 9.8);
                 if (zDev > 2) penalty += (zDev - 2) * 5;
-                score = Math.max(0, Math.min(100, score - penalty));
+                // Score can go negative (penalty balance)
+                score = score - penalty;
+                // But good driving recovers points slowly
+                if (penalty === 0 && score < 100) score += 0.5;
                 updateScore();
-                // Vibration
                 if (navigator.vibrate) {
                     if (penalty > 8) navigator.vibrate([100, 50, 100]);
                     else if (penalty > 4) navigator.vibrate(100);
@@ -281,6 +323,9 @@
             isRecording = true;
             score = 100;
             startTime = Date.now();
+            xHistory = [];
+            yHistory = [];
+            zHistory = [];
             updateScore();
             timer.textContent = '⏱ 00:00';
             status.textContent = 'Optager';
