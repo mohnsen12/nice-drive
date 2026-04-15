@@ -51,6 +51,7 @@
         footer { text-align:center; color:var(--text-dim); font-size:0.7rem; margin-top:8px; }
         .error-msg { background:rgba(239,68,68,0.2); color:var(--red); padding:12px; border-radius:8px; text-align:center; margin:10px 0; }
         .enable-section { text-align:center; padding:15px; }
+        .speed-info { margin-top:5px; }
     </style>
 </head>
 <body>
@@ -64,6 +65,9 @@
             <div class="score-number" id="scoreNum">0</div>
             <div class="score-bar"><div class="score-bar-fill" id="scoreBar" style="width:100%"></div></div>
             <div class="timer" id="timer">⏱ 00:00</div>
+            <div class="speed-info" id="speedInfo" style="display:none;text-align:center;font-size:0.9rem;color:#9ca3af;margin-top:5px">
+                <span id="speedVal">— km/t</span> · <span id="distVal">0.0 km</span>
+            </div>
         </div>
         
         <div class="card">
@@ -144,6 +148,13 @@
         const enableBtn = document.getElementById('enableBtn');
         const errorMsg = document.getElementById('errorMsg');
         const historyList = document.getElementById('historyList');
+        const speedInfo = document.getElementById('speedInfo');
+        const speedVal = document.getElementById('speedVal');
+        const distVal = document.getElementById('distVal');
+        // GPS tracking
+        let watchId = null;
+        let lastLat = null, lastLon = null;
+        let totalDistance = 0;
         const onboarding = document.getElementById('onboarding');
         const okBtn = document.getElementById('okBtn');
         
@@ -210,12 +221,44 @@
             timer.textContent = '⏱ ' + m + ':' + s;
         }
         
+        function updateGPS(position) {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            const speed = position.coords.speed;
+            if (speed !== null && speed > 0) {
+                speedVal.textContent = Math.round(speed * 3.6) + ' km/t';
+            } else {
+                speedVal.textContent = '— km/t';
+            }
+            if (lastLat !== null && lastLon !== null) {
+                const dist = getDistanceFromLatLonInKm(lastLat, lastLon, lat, lon);
+                totalDistance += dist;
+                distVal.textContent = totalDistance.toFixed(1) + ' km';
+            }
+            lastLat = lat;
+            lastLon = lon;
+        }
+        
+        function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = deg2rad(lat2 - lat1);
+            const dLon = deg2rad(lon2 - lon1);
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+        
+        function deg2rad(deg) {
+            return deg * (Math.PI/180);
+        }
+
+        
         function saveTrip() {
             const duration = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0;
             const trip = {
                 date: new Date().toLocaleDateString('da-DK', {day:'2-digit',month:'short'}),
                 duration: duration,
-                score: Math.round(score)
+                score: Math.round(score), distance: totalDistance.toFixed(1)
             };
             trips.unshift(trip);
             if (trips.length > 50) trips.pop();
@@ -341,6 +384,17 @@
             startBtn.disabled = false;
             status.textContent = 'Klar';
             status.classList.add('active');
+            // Request GPS permission
+            if (navigator.geolocation) {
+                navigator.geolocation.requestPermission().then(function(result) {
+                    if (result === 'granted') {
+                        speedInfo.style.display = 'block';
+                    }
+                }).catch(function() {
+                    // Try without explicit permission (Chrome/Android)
+                    speedInfo.style.display = 'block';
+                });
+            }
         }
         
         // Start recording with calibration
@@ -356,6 +410,15 @@
             yHistory = [];
             zHistory = [];
             updateScore();
+            // Start GPS tracking
+            if (navigator.geolocation) {
+                lastLat = null;
+                lastLon = null;
+                totalDistance = 0;
+                distVal.textContent = '0.0 km';
+                speedVal.textContent = '— km/t';
+                watchId = navigator.geolocation.watchPosition(updateGPS, null, {enableHighAccuracy: true});
+            }
             timer.textContent = '⏱ Kalibrerer...';
             status.textContent = 'Kalibrerer...';
             status.classList.add('active');
@@ -379,6 +442,11 @@
             stopBtn.disabled = true;
             resetBtn.disabled = true;
             saveTrip();
+            // Stop GPS tracking
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
         });
         
         // Reset score
@@ -386,6 +454,11 @@
             if (!isRecording) return;
             score = 0;
             updateScore();
+            // Reset GPS
+            totalDistance = 0;
+            distVal.textContent = '0.0 km';
+            lastLat = null;
+            lastLon = null;
         });
         
         // Init
