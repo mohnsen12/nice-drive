@@ -439,7 +439,7 @@
             }
             // Show and init map
             document.getElementById('mapCard').style.display = 'block';
-            if (!map) {
+            if (!map && typeof L !== "undefined") {
                 map = L.map('map').setView([55.5, 10.5], 7);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
             }
