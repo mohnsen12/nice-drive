@@ -23,7 +23,7 @@
         .score-display { text-align:center; }
         .score-number { font-size:4rem; font-weight:900; transition:transform 0.2s; }
         .score-bar { height:12px; background:#374151; border-radius:6px; margin:10px 0; overflow:hidden; }
-        .score-bar-fill { height:100%; background:var(--green); transition:width 0.3s, background 0.3s; }
+        .score-bar-fill { height:100%; background:var(--green); transition:width 0.3s, background 0.3s; max-width:100%; }
         .axes { display:flex; justify-content:space-around; gap:8px; margin:15px 0; }
         .axis { flex:1; text-align:center; }
         .axis-value { font-size:1.4rem; font-weight:700; margin:5px 0; }
@@ -61,7 +61,7 @@
         </header>
         
         <div class="card score-display">
-            <div class="score-number" id="scoreNum">100</div>
+            <div class="score-number" id="scoreNum">0</div>
             <div class="score-bar"><div class="score-bar-fill" id="scoreBar" style="width:100%"></div></div>
             <div class="timer" id="timer">⏱ 00:00</div>
         </div>
@@ -113,7 +113,7 @@
             <h2>Velkommen! 🚗</h2>
             <p>1. Placer telefonen i bil-holderen med skærmen opad</p>
             <p>2. Tryk "Aktivér Sensorer" og derefter "Start"</p>
-            <p>3. Kør forsigtigt - score falder ved hård acceleration, sving og opbremsning</p>
+            <p>3. Kør forsigtigt - score stiger ved hård acceleration, sving og opbremsning</p>
             <button class="btn" id="okBtn">Jeg forstår!</button>
         </div>
     </div>
@@ -121,7 +121,7 @@
     <script>
         const C_GREEN = '#22c55e', C_YELLOW = '#eab308', C_RED = '#ef4444';
         const MAX_HISTORY = 60;
-        let isRecording = false, score = 100, startTime = null, timerInterval = null;
+        let isRecording = false, score = 0, startTime = null, timerInterval = null;
         let xHistory = [], yHistory = [], zHistory = [];
         let trips = JSON.parse(localStorage.getItem('niceDrive_trips') || '[]');
         
@@ -175,8 +175,9 @@
         }
         
         function getScoreColor(s) {
-            if (s >= 80) return C_GREEN;
-            if (s >= 50) return C_YELLOW;
+            // Low score = good (green), high score = bad (red)
+            if (s < 30) return C_GREEN;
+            if (s < 60) return C_YELLOW;
             return C_RED;
         }
         
@@ -277,10 +278,9 @@
                 if (Math.abs(y) > 2) penalty += (Math.abs(y) - 2) * 4;
                 const zDev = Math.abs(z - 9.8);
                 if (zDev > 2) penalty += (zDev - 2) * 5;
-                // Score can go negative (penalty balance)
-                score = score - penalty;
-                // But good driving recovers points slowly
-                if (penalty === 0 && score < 100) score += 0.5;
+                // Score ADDS penalty - starts at 0, goes UP with bad driving
+                score = score + penalty;
+                // No recovery - score only goes up!
                 updateScore();
                 if (navigator.vibrate) {
                     if (penalty > 8) navigator.vibrate([100, 50, 100]);
@@ -321,7 +321,7 @@
         startBtn.addEventListener('click', function() {
             if (isRecording) return;
             isRecording = true;
-            score = 100;
+            score = 0;
             startTime = Date.now();
             xHistory = [];
             yHistory = [];
@@ -355,7 +355,7 @@
         // Reset score
         resetBtn.addEventListener('click', function() {
             if (!isRecording) return;
-            score = 100;
+            score = 0;
             updateScore();
         });
         
