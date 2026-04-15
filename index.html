@@ -113,7 +113,7 @@
             <h2>Velkommen! 🚗</h2>
             <p>1. Placer telefonen i bil-holderen med skærmen opad</p>
             <p>2. Tryk "Aktivér Sensorer" og derefter "Start"</p>
-            <p>3. Kør forsigtigt - score stiger ved hård acceleration, sving og opbremsning</p>
+            <p>3. Hold stille under kalibrering - derefter registreres kun BEVÆGELSE</p>
             <button class="btn" id="okBtn">Jeg forstår!</button>
         </div>
     </div>
@@ -124,6 +124,10 @@
         let isRecording = false, score = 0, startTime = null, timerInterval = null;
         let xHistory = [], yHistory = [], zHistory = [];
         let trips = JSON.parse(localStorage.getItem('niceDrive_trips') || '[]');
+        // Calibration - baseline values
+        let baselineX = 0, baselineY = 0, baselineZ = 9.8;
+        let isCalibrating = false;
+        let calibrationReadings = [];
         
         const scoreNum = document.getElementById('scoreNum');
         const scoreBar = document.getElementById('scoreBar');
@@ -199,6 +203,7 @@
         
         function updateTimer() {
             if (!isRecording || !startTime) return;
+            if (isCalibrating) return; // Don't count during calibration
             const elapsed = Math.floor((Date.now() - startTime) / 1000);
             const m = Math.floor(elapsed / 60).toString().padStart(2, '0');
             const s = (elapsed % 60).toString().padStart(2, '0');
@@ -266,21 +271,42 @@
             const x = acc.x || 0;
             const y = acc.y || 0;
             const z = acc.z || 9.8;
-            xHistory.push(x);
-            yHistory.push(y);
-            zHistory.push(z - 9.8);
+            
+            // Calibration phase - collect readings for 2 seconds
+            if (isCalibrating) {
+                calibrationReadings.push({x, y, z});
+                if (calibrationReadings.length >= 20) { // ~2 seconds at 10Hz
+                    // Average readings as baseline
+                    const n = calibrationReadings.length;
+                    baselineX = calibrationReadings.reduce((s,r)=>s+r.x,0)/n;
+                    baselineY = calibrationReadings.reduce((s,r)=>s+r.y,0)/n;
+                    baselineZ = calibrationReadings.reduce((s,r)=>s+r.z,0)/n;
+                    isCalibrating = false;
+                    timer.textContent = '⏱ 00:00';
+                    status.textContent = 'Optager';
+                }
+                return; // Don't process penalty during calibration
+            }
+            
+            // Calculate deviation from baseline (this is actual acceleration/movement)
+            const deltaX = x - baselineX;
+            const deltaY = y - baselineY;
+            const deltaZ = z - baselineZ;
+            
+            xHistory.push(deltaX);
+            yHistory.push(deltaY);
+            zHistory.push(deltaZ);
             if (xHistory.length > MAX_HISTORY) { xHistory.shift(); yHistory.shift(); zHistory.shift(); }
             updateDisplay(x, y, z);
             drawGraph();
-            if (isRecording) {
+            
+            if (isRecording && !isCalibrating) {
                 let penalty = 0;
-                if (Math.abs(x) > 2) penalty += (Math.abs(x) - 2) * 3;
-                if (Math.abs(y) > 2) penalty += (Math.abs(y) - 2) * 4;
-                const zDev = Math.abs(z - 9.8);
-                if (zDev > 2) penalty += (zDev - 2) * 5;
+                if (Math.abs(deltaX) > 1.5) penalty += (Math.abs(deltaX) - 1.5) * 3;
+                if (Math.abs(deltaY) > 1.5) penalty += (Math.abs(deltaY) - 1.5) * 4;
+                if (Math.abs(deltaZ) > 1.5) penalty += (Math.abs(deltaZ) - 1.5) * 5;
                 // Score ADDS penalty - starts at 0, goes UP with bad driving
                 score = score + penalty;
-                // No recovery - score only goes up!
                 updateScore();
                 if (navigator.vibrate) {
                     if (penalty > 8) navigator.vibrate([100, 50, 100]);
@@ -317,9 +343,12 @@
             status.classList.add('active');
         }
         
-        // Start recording
+        // Start recording with calibration
         startBtn.addEventListener('click', function() {
             if (isRecording) return;
+            // Start calibration phase
+            calibrationReadings = [];
+            isCalibrating = true;
             isRecording = true;
             score = 0;
             startTime = Date.now();
@@ -327,8 +356,8 @@
             yHistory = [];
             zHistory = [];
             updateScore();
-            timer.textContent = '⏱ 00:00';
-            status.textContent = 'Optager';
+            timer.textContent = '⏱ Kalibrerer...';
+            status.textContent = 'Kalibrerer...';
             status.classList.add('active');
             startBtn.disabled = true;
             stopBtn.disabled = false;
