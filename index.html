@@ -13,90 +13,112 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        :root { --bg:#111827;--card:#1f2937;--border:#374151;--text:#f9fafb;--text-dim:#9ca3af;--green:#22c55e;--yellow:#eab308;--red:#ef4444; }
-        * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
-        body { font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:12px; }
-        .container { max-width:500px; margin:0 auto; display:flex; flex-direction:column; gap:12px; }
-        header { text-align:center; padding:8px 0; }
-        header h1 { font-size:1.8rem; font-weight:900; }
-        .status-badge { display:inline-block; padding:4px 12px; border-radius:999px; font-size:0.75rem; font-weight:600; text-transform:uppercase; margin-top:6px; background:var(--border); color:var(--text-dim); }
-        .status-badge.active { background:rgba(34,197,94,0.2); color:var(--green); }
-        .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px; }
-        .score-display { text-align:center; }
-        .score-number { font-size:4rem; font-weight:900; transition:transform 0.2s; }
-        .score-bar { height:12px; background:#374151; border-radius:6px; margin:10px 0; overflow:hidden; }
-        .score-bar-fill { height:100%; background:var(--green); transition:width 0.3s, background 0.3s; max-width:100%; }
-        .axes { display:flex; justify-content:space-around; gap:8px; margin:15px 0; }
-        .axis { flex:1; text-align:center; }
-        .axis-value { font-size:1.4rem; font-weight:700; margin:5px 0; }
-        .axis-label { font-size:0.7rem; color:var(--text-dim); text-transform:uppercase; }
-        .controls { display:flex; justify-content:center; gap:8px; flex-wrap:wrap; }
-        .btn { background:#374151; color:var(--text); border:none; padding:10px 16px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; transition:all 0.2s; }
-        .btn:hover { background:#4b5563; }
-        .btn:disabled { opacity:0.4; cursor:not-allowed; }
-        .btn-start { background:var(--green); color:#000; }
-        .btn-start:hover { background:#16a34a; }
-        .btn-stop { background:var(--red); }
-        .btn-enable { background:#3b82f6; }
-        .timer { text-align:center; font-size:1.2rem; color:var(--text-dim); margin:5px 0; }
-        .history-title { font-size:1rem; font-weight:700; margin-bottom:8px; }
-        .history-list { display:flex; flex-direction:column; gap:6px; }
-        .history-item { display:flex; justify-content:space-between; align-items:center; padding:8px; background:rgba(0,0,0,0.2); border-radius:8px; font-size:0.85rem; }
-        .history-score { font-weight:700; }
-        .no-trips { text-align:center; color:var(--text-dim); padding:20px; font-size:0.9rem; }
-        .onboarding { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.9); display:flex; align-items:center; justify-content:center; z-index:100; padding:20px; }
-        .onboarding.hidden { display:none; }
-        .onboarding-content { background:var(--card); padding:24px; border-radius:12px; max-width:350px; text-align:center; }
-        .onboarding h2 { margin-bottom:12px; }
-        .onboarding p { color:var(--text-dim); margin-bottom:8px; font-size:0.9rem; line-height:1.5; }
-        .onboarding .btn { margin-top:12px; }
-        footer { text-align:center; color:var(--text-dim); font-size:0.7rem; margin-top:8px; }
-        .error-msg { background:rgba(239,68,68,0.2); color:var(--red); padding:12px; border-radius:8px; text-align:center; margin:10px 0; }
-        .enable-section { text-align:center; padding:15px; }
-        .speed-info { margin-top:5px; }
+        :root{--bg:#111827;--card:#1f2937;--border:#374151;--text:#f9fafb;--text-dim:#9ca3af;--green:#22c55e;--yellow:#eab308;--red:#ef4444;}
+        *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+        body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:12px;}
+        .container{max-width:500px;margin:0 auto;display:flex;flex-direction:column;gap:12px;}
+        .top-nav{display:flex;gap:4px;background:#1f2937;border-radius:12px;padding:4px;}
+        .tab-btn{flex:1;padding:10px 8px;border:none;background:transparent;color:var(--text-dim);font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;transition:all 0.2s;}
+        .tab-btn.active{background:#374151;color:var(--text);}
+        .tab-btn:hover:not(.active){color:var(--text);}
+        header{text-align:center;padding:8px 0 0;}
+        header h1{font-size:1.8rem;font-weight:900;}
+        .status-badge{display:inline-block;padding:4px 12px;border-radius:999px;font-size:0.75rem;font-weight:600;text-transform:uppercase;margin-top:6px;background:var(--border);color:var(--text-dim);}
+        .status-badge.active{background:rgba(34,197,94,0.2);color:var(--green);}
+        .page{display:none;}
+        .page.active{display:block;}
+        .back-btn{background:#374151;color:var(--text);border:none;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px;display:inline-flex;align-items:center;gap:4px;}
+        .back-btn:hover{background:#4b5563;}
+        .score-display{text-align:center;}
+        .score-number{font-size:4rem;font-weight:900;transition:transform 0.2s;}
+        .score-bar{height:12px;background:#374151;border-radius:6px;margin:10px 0;overflow:hidden;}
+        .score-bar-fill{height:100%;background:var(--green);transition:width 0.3s,background 0.3s;max-width:100%;}
+        .axes{display:flex;justify-content:space-around;gap:8px;margin:15px 0;}
+        .axis{flex:1;text-align:center;}
+        .axis-value{font-size:1.4rem;font-weight:700;margin:5px 0;}
+        .axis-label{font-size:0.7rem;color:var(--text-dim);text-transform:uppercase;}
+        .controls{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;}
+        .btn{background:#374151;color:var(--text);border:none;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;}
+        .btn:hover{background:#4b5563;}
+        .btn:disabled{opacity:0.4;cursor:not-allowed;}
+        .btn-start{background:var(--green);color:#000;}
+        .btn-start:hover{background:#16a34a;}
+        .btn-stop{background:var(--red);}
+        .btn-enable{background:#3b82f6;}
+        .timer{text-align:center;font-size:1.2rem;color:var(--text-dim);margin:5px 0;}
+        .history-item{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(0,0,0,0.2);border-radius:10px;font-size:0.85rem;margin-bottom:6px;}
+        .history-item-info{flex:1;}
+        .history-item-date{font-size:0.75rem;color:var(--text-dim);margin-bottom:2px;}
+        .history-item-stats{display:flex;gap:10px;font-size:0.8rem;}
+        .history-item-actions{display:flex;gap:6px;}
+        .btn-sm{padding:6px 10px;font-size:12px;border-radius:6px;}
+        .btn-replay{background:#3b82f6;}
+        .btn-replay:hover{background:#2563eb;}
+        .btn-delete{background:rgba(239,68,68,0.2);color:var(--red);}
+        .btn-delete:hover{background:rgba(239,68,68,0.3);}
+        .no-trips{text-align:center;color:var(--text-dim);padding:30px;font-size:0.9rem;}
+        .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:15px;}
+        .stat-box{background:rgba(0,0,0,0.2);padding:14px;border-radius:10px;text-align:center;}
+        .stat-value{font-size:1.8rem;font-weight:900;}
+        .stat-label{font-size:0.7rem;color:var(--text-dim);text-transform:uppercase;margin-top:4px;}
+        .stat-box.best .stat-value{color:var(--green);}
+        .stat-box.worst .stat-value{color:var(--red);}
+        .stat-box.avg .stat-value{color:var(--yellow);}
+        .section-title{font-size:1rem;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+        .chart-container{background:rgba(0,0,0,0.2);border-radius:10px;padding:14px;}
+        .chart-bars{display:flex;align-items:flex-end;gap:6px;height:100px;margin-top:10px;}
+        .chart-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+        .chart-bar{width:100%;background:var(--green);border-radius:4px 4px 0 0;min-height:4px;transition:height 0.3s;}
+        .chart-bar.empty{background:#374151;}
+        .chart-label{font-size:0.6rem;color:var(--text-dim);}
+        .chart-bar-score{font-size:0.6rem;font-weight:700;}
+        .replay-banner{background:linear-gradient(135deg,#3b82f6,#1d4ed8);padding:12px 16px;border-radius:10px;text-align:center;margin-bottom:10px;}
+        .replay-banner-text{font-size:0.85rem;font-weight:600;}
+        .replay-old-score{font-size:0.8rem;opacity:0.8;}
+        .speed-info{margin-top:5px;}
+        .onboarding{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;}
+        .onboarding.hidden{display:none;}
+        .onboarding-content{background:var(--card);padding:24px;border-radius:12px;max-width:350px;text-align:center;}
+        .onboarding h2{margin-bottom:12px;}
+        .onboarding p{color:var(--text-dim);margin-bottom:8px;font-size:0.9rem;line-height:1.5;}
+        .onboarding .btn{margin-top:12px;}
+        footer{text-align:center;color:var(--text-dim);font-size:0.7rem;margin-top:8px;}
+        .error-msg{background:rgba(239,68,68,0.2);color:var(--red);padding:12px;border-radius:8px;text-align:center;margin:10px 0;}
+        #tripSummary{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#1f2937;border:2px solid #22c55e;border-radius:16px;padding:24px;text-align:center;max-width:320px;width:90%;z-index:200;}
+        #tripSummary.hidden{display:none;}
+        #replaySummary{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#1f2937;border:2px solid #3b82f6;border-radius:16px;padding:24px;text-align:center;max-width:320px;width:90%;z-index:200;}
+        #replaySummary.hidden{display:none;}
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🚗 Pæn Kørsel</h1>
-            <div class="status-badge" id="status">Ikke klar</div>
-        </header>
-        
+<div class="container">
+    <nav class="top-nav">
+        <button class="tab-btn active" data-tab="tur">🚗 Tur</button>
+        <button class="tab-btn" data-tab="historik">📋 Historik</button>
+        <button class="tab-btn" data-tab="statistik">📊 Statistik</button>
+    </nav>
+    <div id="page-tur" class="page active">
+        <header><h1>🚗 Pæn Kørsel</h1><div class="status-badge" id="status">Ikke klar</div></header>
+        <div id="replayBanner" class="replay-banner" style="display:none">
+            <div class="replay-banner-text">🔄 GENSPILNING</div>
+            <div class="replay-old-score" id="replayOldScoreText"></div>
+        </div>
         <div class="card score-display">
             <div class="score-number" id="scoreNum">0</div>
+            <div id="scoreLabel" style="font-size:0.9rem;text-align:center;margin-top:2px;color:#9ca3af">Pæn kørsel: 0/100</div>
             <div class="score-bar"><div class="score-bar-fill" id="scoreBar" style="width:100%"></div></div>
             <div class="timer" id="timer">⏱ 00:00</div>
-            <div class="speed-info" id="speedInfo" style="display:block;text-align:center;font-size:0.9rem;color:#9ca3af;margin-top:5px;opacity:0.5">
-                <span id="speedVal">— km/t</span> · <span id="distVal">0.0 km</span>
-            </div>
+            <div class="speed-info" style="display:block;text-align:center;font-size:0.9rem;color:#9ca3af;margin-top:5px;opacity:0.5"><span id="speedVal">— km/t</span> · <span id="distVal">0.0 km</span></div>
         </div>
-        
         <div class="card">
             <div class="axes">
-                <div class="axis">
-                    <div class="axis-label">X-Akse</div>
-                    <div class="axis-value" id="xVal" style="color:var(--green)">0.0</div>
-                    <div class="axis-label">Sidemaindstød</div>
-                </div>
-                <div class="axis">
-                    <div class="axis-label">Y-Akse</div>
-                    <div class="axis-value" id="yVal" style="color:var(--green)">0.0</div>
-                    <div class="axis-label">Sving</div>
-                </div>
-                <div class="axis">
-                    <div class="axis-label">Z-Akse</div>
-                    <div class="axis-value" id="zVal" style="color:var(--green)">9.8</div>
-                    <div class="axis-label">Gas/Bremse</div>
-                </div>
+                <div class="axis"><div class="axis-label">X-Akse</div><div class="axis-value" id="xVal" style="color:var(--green)">0.0</div><div class="axis-label">Sidemaindstød</div></div>
+                <div class="axis"><div class="axis-label">Y-Akse</div><div class="axis-value" id="yVal" style="color:var(--green)">0.0</div><div class="axis-label">Sving</div></div>
+                <div class="axis"><div class="axis-label">Z-Akse</div><div class="axis-value" id="zVal" style="color:var(--green)">9.8</div><div class="axis-label">Gas/Bremse</div></div>
             </div>
             <canvas id="graphCanvas" style="width:100%;height:80px;background:#111827;border-radius:8px;margin-top:10px"></canvas>
         </div>
-        
-        <div id="mapCard" class="card" style="display:none">
-            <div id="map" style="width:100%;height:200px;border-radius:8px"></div>
-        </div>
-        
+        <div id="mapCard" class="card" style="display:none"><div id="map" style="width:100%;height:200px;border-radius:8px"></div></div>
         <div class="card">
             <div class="controls">
                 <button class="btn btn-enable" id="enableBtn">📱 Aktivér Sensorer</button>
@@ -105,398 +127,204 @@
                 <button class="btn btn-stop" id="stopBtn" disabled>■ Stop</button>
             </div>
         </div>
-        
         <div id="errorMsg" class="error-msg" style="display:none"></div>
-        
-        <div class="card">
-            <div class="history-title">📋 Tur Historik</div>
-            <div class="history-list" id="historyList">
-                <div class="no-trips">Ingen ture endnu. Start din første tur!</div>
-            </div>
-        </div>
-        
-        <footer>Pæn Kørsel v5.1</footer>
     </div>
-    
-    <div class="onboarding" id="onboarding">
-        <div class="onboarding-content">
-            <h2>Velkommen! 🚗</h2>
-            <p>1. Placer telefonen i bil-holderen med skærmen opad</p>
-            <p>2. Tryk "Aktivér Sensorer" og derefter "Start"</p>
-            <p>3. Hold stille under kalibrering - derefter registreres kun BEVÆGELSE</p>
-            <button class="btn" id="okBtn">Jeg forstår!</button>
-        </div>
+    <div id="page-historik" class="page">
+        <button class="back-btn" onclick="showPage('tur')">← Tilbage</button>
+        <div class="section-title">📋 Alle Ture</div>
+        <div id="historyList"></div>
     </div>
-    
-    <script>
-        const C_GREEN = '#22c55e', C_YELLOW = '#eab308', C_RED = '#ef4444';
-        const MAX_HISTORY = 60;
-        let isRecording = false, score = 0, startTime = null, timerInterval = null;
-        let xHistory = [], yHistory = [], zHistory = [];
-        let trips = JSON.parse(localStorage.getItem('niceDrive_trips') || '[]');
-        // Calibration - baseline values
-        let baselineX = 0, baselineY = 0, baselineZ = 9.8;
-        let isCalibrating = false;
-        let calibrationReadings = [];
-        
-        const scoreNum = document.getElementById('scoreNum');
-        const scoreBar = document.getElementById('scoreBar');
-        const status = document.getElementById('status');
-        const timer = document.getElementById('timer');
-        const graphCanvas = document.getElementById('graphCanvas');
-        const graphCtx = graphCanvas.getContext('2d');
-        const xVal = document.getElementById('xVal');
-        const yVal = document.getElementById('yVal');
-        const zVal = document.getElementById('zVal');
-        const startBtn = document.getElementById('startBtn');
-        const stopBtn = document.getElementById('stopBtn');
-        const resetBtn = document.getElementById('resetBtn');
-        const enableBtn = document.getElementById('enableBtn');
-        const errorMsg = document.getElementById('errorMsg');
-        const historyList = document.getElementById('historyList');
-        const speedInfo = document.getElementById('speedInfo');
-        const speedVal = document.getElementById('speedVal');
-        const distVal = document.getElementById('distVal');
-        // GPS tracking
-        let watchId = null;
-        let lastLat = null, lastLon = null;
-        let totalDistance = 0;
-        let routeCoords = [];
-        let map = null;
-        let routeLine = null;
-        const onboarding = document.getElementById('onboarding');
-        const okBtn = document.getElementById('okBtn');
-        
-        // Show onboarding once
-        if (!localStorage.getItem('niceDrive_seen')) {
-            onboarding.classList.remove('hidden');
-        }
-        okBtn.addEventListener('click', function() {
-            onboarding.classList.add('hidden');
-            localStorage.setItem('niceDrive_seen', '1');
-        });
-        
-        // Check if DeviceMotion is available
-        function checkMotionSupport() {
-            if (!window.DeviceMotionEvent) {
-                showError('❌ Denne app kræver en telefon med accelerometer');
-                enableBtn.disabled = true;
-                return false;
-            }
-            return true;
-        }
-        
-        function showError(msg) {
-            errorMsg.textContent = msg;
-            errorMsg.style.display = 'block';
-        }
-        
-        function getColor(v) {
-            const a = Math.abs(v);
-            if (a < 2) return C_GREEN;
-            if (a < 4) return C_YELLOW;
-            return C_RED;
-        }
-        
-        function getScoreColor(s) {
-            // Low score = good (green), high score = bad (red)
-            if (s < 30) return C_GREEN;
-            if (s < 60) return C_YELLOW;
-            return C_RED;
-        }
-        
-        function updateDisplay(x, y, z) {
-            xVal.textContent = x.toFixed(1);
-            yVal.textContent = y.toFixed(1);
-            zVal.textContent = z.toFixed(1);
-            xVal.style.color = getColor(x);
-            yVal.style.color = getColor(y);
-            zVal.style.color = getColor(z - 9.8);
-        }
-        
-        function updateScore() {
-            scoreNum.textContent = Math.round(score);
-            scoreBar.style.width = score + '%';
-            scoreNum.style.color = getScoreColor(score);
-            scoreBar.style.background = getScoreColor(score);
-        }
-        
-        function updateTimer() {
-            if (!isRecording || !startTime) return;
-            if (isCalibrating) return; // Don't count during calibration
-            const elapsed = Math.floor((Date.now() - startTime) / 1000);
-            const m = Math.floor(elapsed / 60).toString().padStart(2, '0');
-            const s = (elapsed % 60).toString().padStart(2, '0');
-            timer.textContent = '⏱ ' + m + ':' + s;
-        }
-        
-        function updateGPS(position) {
-            const lat = position.coords.latitude;
-            const lon = position.coords.longitude;
-            const speed = position.coords.speed;
-            if (speed !== null && speed > 0) {
-                speedVal.textContent = Math.round(speed * 3.6) + ' km/t';
-            } else {
-                speedVal.textContent = '— km/t';
-            }
-            if (lastLat !== null && lastLon !== null) {
-                const dist = getDistanceFromLatLonInKm(lastLat, lastLon, lat, lon);
-                totalDistance += dist;
-                distVal.textContent = totalDistance.toFixed(1) + ' km';
-            }
-            lastLat = lat;
-            lastLon = lon;
-            
-            // Add to route
-            routeCoords.push([lat, lon]);
-            if (map && routeCoords.length > 1) {
-                if (routeLine) map.removeLayer(routeLine);
-                routeLine = L.polyline(routeCoords, {color: '#22c55e', weight: 4}).addTo(map);
-                map.fitBounds(routeLine.getBounds(), {padding: [20, 20]});
-            }
-        }
-        
-        function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
-            const R = 6371;
-            const dLat = deg2rad(lat2 - lat1);
-            const dLon = deg2rad(lon2 - lon1);
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
-        }
-        
-        function deg2rad(deg) {
-            return deg * (Math.PI/180);
-        }
-
-        
-        function saveTrip() {
-            const duration = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0;
-            const trip = {
-                date: new Date().toLocaleDateString('da-DK', {day:'2-digit',month:'short'}),
-                duration: duration,
-                score: Math.round(score), distance: totalDistance.toFixed(1), route: routeCoords.slice()
-            };
-            trips.unshift(trip);
-            if (trips.length > 50) trips.pop();
-            localStorage.setItem('niceDrive_trips', JSON.stringify(trips));
-            renderHistory();
-        }
-        
-        function renderHistory() {
-            if (trips.length === 0) {
-                historyList.innerHTML = '<div class="no-trips">Ingen ture endnu. Start din første tur!</div>';
-                return;
-            }
-            historyList.innerHTML = trips.slice(0, 5).map(function(t) {
-                const color = getScoreColor(t.score);
-                return '<div class="history-item"><span>' + t.date + ' (' + Math.floor(t.duration/60) + 'm)</span><span class="history-score" style="color:' + color + '">' + t.score + ' point</span></div>';
-            }).join('');
-        }
-        
-        function drawGraph() {
-            const w = graphCanvas.width = graphCanvas.offsetWidth * 2;
-            const h = graphCanvas.height = graphCanvas.offsetHeight * 2;
-            graphCtx.clearRect(0, 0, w, h);
-            const midY = h / 2;
-            const maxVal = 10;
-            function drawLine(history, color) {
-                if (history.length < 2) return;
-                graphCtx.strokeStyle = color;
-                graphCtx.lineWidth = 3;
-                graphCtx.beginPath();
-                for (let i = 0; i < history.length; i++) {
-                    const x = (i / MAX_HISTORY) * w;
-                    const y = midY - (history[i] / maxVal) * (h / 2);
-                    if (i === 0) graphCtx.moveTo(x, y);
-                    else graphCtx.lineTo(x, y);
-                }
-                graphCtx.stroke();
-            }
-            drawLine(xHistory, '#ef4444');
-            drawLine(yHistory, '#eab308');
-            drawLine(zHistory, '#22c55e');
-            // Center line
-            graphCtx.strokeStyle = '#374151';
-            graphCtx.lineWidth = 1;
-            graphCtx.beginPath();
-            graphCtx.moveTo(0, midY);
-            graphCtx.lineTo(w, midY);
-            graphCtx.stroke();
-        }
-        
-        function onMotion(event) {
-            const acc = event.accelerationIncludingGravity;
-            if (!acc) return;
-            const x = acc.x || 0;
-            const y = acc.y || 0;
-            const z = acc.z || 9.8;
-            
-            // Calibration phase - collect readings for 2 seconds
-            if (isCalibrating) {
-                calibrationReadings.push({x, y, z});
-                if (calibrationReadings.length >= 20) { // ~2 seconds at 10Hz
-                    // Average readings as baseline
-                    const n = calibrationReadings.length;
-                    baselineX = calibrationReadings.reduce((s,r)=>s+r.x,0)/n;
-                    baselineY = calibrationReadings.reduce((s,r)=>s+r.y,0)/n;
-                    baselineZ = calibrationReadings.reduce((s,r)=>s+r.z,0)/n;
-                    isCalibrating = false;
-                    timer.textContent = '⏱ 00:00';
-                    status.textContent = 'Optager';
-                }
-                return; // Don't process penalty during calibration
-            }
-            
-            // Calculate deviation from baseline (this is actual acceleration/movement)
-            const deltaX = x - baselineX;
-            const deltaY = y - baselineY;
-            const deltaZ = z - baselineZ;
-            
-            xHistory.push(deltaX);
-            yHistory.push(deltaY);
-            zHistory.push(deltaZ);
-            if (xHistory.length > MAX_HISTORY) { xHistory.shift(); yHistory.shift(); zHistory.shift(); }
-            updateDisplay(x, y, z);
-            drawGraph();
-            
-            if (isRecording && !isCalibrating) {
-                let penalty = 0;
-                if (Math.abs(deltaX) > 1.5) penalty += (Math.abs(deltaX) - 1.5) * 3;
-                if (Math.abs(deltaY) > 1.5) penalty += (Math.abs(deltaY) - 1.5) * 4;
-                if (Math.abs(deltaZ) > 1.5) penalty += (Math.abs(deltaZ) - 1.5) * 5;
-                // Score ADDS penalty - starts at 0, goes UP with bad driving
-                score = score + penalty;
-                updateScore();
-                if (navigator.vibrate) {
-                    if (penalty > 8) navigator.vibrate([100, 50, 100]);
-                    else if (penalty > 4) navigator.vibrate(100);
-                    else if (penalty > 2) navigator.vibrate(50);
-                }
-            }
-        }
-        
-        // Enable sensors
-        enableBtn.addEventListener('click', function() {
-            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-                // iOS
-                DeviceMotionEvent.requestPermission().then(function(response) {
-                    if (response === 'granted') {
-                        enableMotion();
-                    } else {
-                        showError('❌ Permission denied');
-                    }
-                }).catch(function(e) {
-                    showError('❌ Error: ' + e.message);
-                });
-            } else {
-                // Android/other
-                enableMotion();
-            }
-        });
-        
-        function enableMotion() {
-            window.addEventListener('devicemotion', onMotion);
-            enableBtn.style.display = 'none';
-            startBtn.disabled = false;
-            status.textContent = 'Klar';
-            status.classList.add('active');
-            // Request GPS permission
-            if (navigator.geolocation) {
-                navigator.geolocation.requestPermission().then(function(result) {
-                    if (result === 'granted') {
-                        speedInfo.style.display = 'block';
-                    }
-                }).catch(function() {
-                    // Try without explicit permission (Chrome/Android)
-                    speedInfo.style.display = 'block';
-                });
-            }
-        }
-        
-        // Start recording with calibration
-        startBtn.addEventListener('click', function() {
-            if (isRecording) return;
-            // Start calibration phase
-            calibrationReadings = [];
-            isCalibrating = true;
-            isRecording = true;
-            score = 0;
-            startTime = Date.now();
-            xHistory = [];
-            yHistory = [];
-            zHistory = [];
-            updateScore();
-            // Start GPS tracking
-            if (navigator.geolocation) {
-                lastLat = null;
-                lastLon = null;
-                totalDistance = 0;
-                distVal.textContent = '0.0 km';
-                speedVal.textContent = '— km/t';
-                routeCoords = [];
-                watchId = navigator.geolocation.watchPosition(updateGPS, null, {enableHighAccuracy: true});
-            }
-            // Show and init map
-            document.getElementById('mapCard').style.display = 'block';
-            if (!map && typeof L !== "undefined") {
-                map = L.map('map').setView([55.5, 10.5], 7);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
-            }
-            routeCoords = [];
-            if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
-            timer.textContent = '⏱ Kalibrerer...';
-            status.textContent = 'Kalibrerer...';
-            status.classList.add('active');
-            startBtn.disabled = true;
-            stopBtn.disabled = false;
-            resetBtn.disabled = false;
-            timerInterval = setInterval(updateTimer, 1000);
-        });
-        
-        // Stop recording
-        stopBtn.addEventListener('click', function() {
-            if (!isRecording) return;
-            isRecording = false;
-            if (timerInterval) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-            }
-            status.textContent = 'Gemt';
-            status.classList.remove('active');
-            startBtn.disabled = false;
-            stopBtn.disabled = true;
-            resetBtn.disabled = true;
-            saveTrip();
-            // Stop GPS tracking
-            if (watchId !== null) {
-                navigator.geolocation.clearWatch(watchId);
-                watchId = null;
-            }
-            // Hide map
-            document.getElementById('mapCard').style.display = 'none';
-        });
-        
-        // Reset score
-        resetBtn.addEventListener('click', function() {
-            if (!isRecording) return;
-            score = 0;
-            updateScore();
-            // Reset GPS
-            totalDistance = 0;
-            distVal.textContent = '0.0 km';
-            lastLat = null;
-            lastLon = null;
-        });
-        
-        // Init
-        checkMotionSupport();
-        renderHistory();
-        
-        // Auto-enable on Android (no permission needed)
-        if (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission !== 'function') {
-            enableMotion();
-        }
-    </script>
+    <div id="page-statistik" class="page">
+        <button class="back-btn" onclick="showPage('tur')">← Tilbage</button>
+        <div class="section-title">📊 Statistik</div>
+        <div class="stat-grid">
+            <div class="stat-box"><div class="stat-value" id="statTotal">0</div><div class="stat-label">Antal Ture</div></div>
+            <div class="stat-box avg"><div class="stat-value" id="statAvg">—</div><div class="stat-label">Gennemsnit</div></div>
+            <div class="stat-box best"><div class="stat-value" id="statBest">—</div><div class="stat-label">Bedste</div></div>
+            <div class="stat-box worst"><div class="stat-value" id="statWorst">—</div><div class="stat-label">Værste</div></div>
+        </div>
+        <div class="stat-grid">
+            <div class="stat-box"><div class="stat-value" id="statDistance">0 km</div><div class="stat-label">Total Distance</div></div>
+            <div class="stat-box"><div class="stat-value" id="statDuration">0 min</div><div class="stat-label">Total Tid</div></div>
+        </div>
+        <div class="section-title">📈 Ugentlig Oversigt</div>
+        <div class="chart-container"><div id="weeklyChart" class="chart-bars"></div></div>
+    </div>
+    <footer>Pæn Kørsel v6.0</footer>
+</div>
+<div id="tripSummary" class="hidden">
+    <div id="tripEmoji" style="font-size:4rem;margin-bottom:10px">🟢</div>
+    <div id="tripMessage" style="font-size:1.3rem;font-weight:700;margin-bottom:10px;color:#22c55e">Fantastisk!</div>
+    <div id="tripScore" style="font-size:2.5rem;font-weight:900;margin-bottom:15px">0 point</div>
+    <div id="tripStats" style="font-size:0.9rem;color:#9ca3af;margin-bottom:15px">0 km · 00:00</div>
+    <button class="btn" onclick="closeTripSummary()" style="width:100%">Luk</button>
+</div>
+<div id="replaySummary" class="hidden">
+    <div id="replayResultEmoji" style="font-size:4rem;margin-bottom:10px">🏆</div>
+    <div id="replayResultTitle" style="font-size:1.3rem;font-weight:700;margin-bottom:10px">Resultat</div>
+    <div id="replayResultDiff" style="font-size:1.5rem;font-weight:900;margin-bottom:10px"></div>
+    <div style="display:flex;justify-content:center;gap:20px;margin-bottom:15px;font-size:0.85rem">
+        <div><span style="color:#9ca3af">Dengang:</span> <span id="replayOldScore" style="font-weight:700"></span></div>
+        <div><span style="color:#9ca3af">Nu:</span> <span id="replayNewScore" style="font-weight:700"></span></div>
+    </div>
+    <div id="replayDistance" style="font-size:0.85rem;color:#9ca3af;margin-bottom:15px"></div>
+    <button class="btn" onclick="closeReplaySummary()" style="width:100%">Luk</button>
+</div>
+<div class="onboarding" id="onboarding">
+    <div class="onboarding-content">
+        <h2>Velkommen! 🚗</h2>
+        <p>1. Placer telefonen i bil-holderen med skærmen opad</p>
+        <p>2. Tryk "Aktivér Sensorer" og derefter "Start"</p>
+        <p>3. Hold stille under kalibrering - derefter registreres kun BEVÆGELSE</p>
+        <p>4. Ved turens slutning vises din score med feedback!</p>
+        <button class="btn" id="okBtn">Jeg forstår!</button>
+    </div>
+</div>
+<script>
+var C_GREEN='#22c55e',C_YELLOW='#eab308',C_RED='#ef4444';
+var MAX_HISTORY=60;
+var isRecording=false,score=0,startTime=null,timerInterval=null;
+var xHistory=[],yHistory=[],zHistory=[];
+var trips=JSON.parse(localStorage.getItem('niceDrive_trips')||'[]');
+var baselineX=0,baselineY=0,baselineZ=9.8;
+var isCalibrating=false;
+var calibrationReadings=[];
+var watchId=null;
+var lastLat=null,lastLon=null;
+var totalDistance=0;
+var routeCoords=[];
+var map=null;
+var routeLine=null;
+var replayRoute=null;
+var isReplayMode=false;
+var replayTripId=null;
+var replayOldScore=null;
+var scoreNum,scoreLabel,scoreBar,status,timer,graphCanvas,graphCtx;
+var xVal,yVal,zVal,startBtn,stopBtn,resetBtn,enableBtn,errorMsg;
+var speedVal,distVal,replayBanner,replayOldScoreText,onboarding,okBtn;
+function initDOM(){
+  scoreNum=document.getElementById('scoreNum');scoreLabel=document.getElementById('scoreLabel');
+  scoreBar=document.getElementById('scoreBar');status=document.getElementById('status');
+  timer=document.getElementById('timer');graphCanvas=document.getElementById('graphCanvas');
+  graphCtx=graphCanvas.getContext('2d');xVal=document.getElementById('xVal');
+  yVal=document.getElementById('yVal');zVal=document.getElementById('zVal');
+  startBtn=document.getElementById('startBtn');stopBtn=document.getElementById('stopBtn');
+  resetBtn=document.getElementById('resetBtn');enableBtn=document.getElementById('enableBtn');
+  errorMsg=document.getElementById('errorMsg');speedVal=document.getElementById('speedVal');
+  distVal=document.getElementById('distVal');replayBanner=document.getElementById('replayBanner');
+  replayOldScoreText=document.getElementById('replayOldScoreText');
+  onboarding=document.getElementById('onboarding');okBtn=document.getElementById('okBtn');
+}
+initDOM();
+if(!localStorage.getItem('niceDrive_seen')){onboarding.classList.remove('hidden');}
+okBtn.addEventListener('click',function(){onboarding.classList.add('hidden');localStorage.setItem('niceDrive_seen','1');});
+document.querySelectorAll('.tab-btn').forEach(function(btn){btn.addEventListener('click',function(){showPage(this.dataset.tab);});});
+function showPage(page){
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  document.querySelector('.tab-btn[data-tab="'+page+'"]').classList.add('active');
+  document.getElementById('page-'+page).classList.add('active');
+  if(page==='historik')renderHistory();
+  if(page==='statistik')renderStats();
+}
+function renderHistory(){
+  var el=document.getElementById('historyList');
+  if(!el)return;
+  if(trips.length===0){el.innerHTML='<div class="no-trips">Ingen ture endnu. Start din første tur!</div>';return;}
+  var html='';
+  for(var i=trips.length-1;i>=0;i--){
+    var t=trips[i];var color=getScoreColor(t.score);
+    var durMin=Math.floor(t.duration/60);var hasRoute=t.route&&t.route.length>1;
+    html+='<div class="history-item"><div class="history-item-info"><div class="history-item-date">'+t.date+'</div><div class="history-item-stats"><span style="color:'+color+'">'+t.score+' point</span><span style="color:#9ca3af">'+t.distance+' km</span><span style="color:#9ca3af">'+durMin+' min</span></div></div><div class="history-item-actions">'+(hasRoute?'<button class="btn btn-sm btn-replay" onclick="startReplay('+i+')">🔄</button>':'')+'<button class="btn btn-sm btn-delete" onclick="deleteTrip('+i+')">✕</button></div></div>';
+  }
+  el.innerHTML=html;
+}
+function deleteTrip(idx){if(confirm('Slet denne tur?')){trips.splice(idx,1);localStorage.setItem('niceDrive_trips',JSON.stringify(trips));renderHistory();}}
+function startReplay(idx){
+  var trip=trips[idx];
+  if(!trip.route||trip.route.length<2){alert('Denne tur har ingen gemt rute.');return;}
+  isReplayMode=true;replayTripId=idx;replayOldScore=trip.score;replayRoute=trip.route.slice();
+  replayBanner.style.display='block';replayOldScoreText.textContent='Tidligere: '+trip.score+' point';
+  showPage('tur');
+  score=0;totalDistance=0;routeCoords=[];xHistory=[];yHistory=[];zHistory=[];
+  updateScore();distVal.textContent='0.0 km';
+  document.getElementById('mapCard').style.display='block';
+  if(!map&&typeof L!=="undefined"){map=L.map('map').setView([55.5,10.5],7);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);}
+  if(routeLine)map.removeLayer(routeLine);
+  routeLine=L.polyline(replayRoute,{color:'#3b82f6',weight:5,opacity:0.7}).addTo(map);
+  map.fitBounds(routeLine.getBounds(),{padding:[20,20]});
+  if(!startBtn.disabled){startRecording(true);}
+}
+function endReplay(){
+  isReplayMode=false;replayBanner.style.display='none';
+  var diff=score-replayOldScore;var diffAbs=Math.abs(Math.round(diff));
+  var emoji,title,resultClass;
+  if(diff<-5){emoji='🏆';title='Kæmpe forbedring!';resultClass='better';}
+  else if(diff<0){emoji='👍';title='Forbedring!';resultClass='better';}
+  else if(diff>5){emoji='📉';title='Ikke helt så godt...';resultClass='worse';}
+  else if(diff>0){emoji='📊';title='Lidt værre';resultClass='worse';}
+  else{emoji='⚖️';title='Uændret';resultClass='same';}
+  document.getElementById('replayResultEmoji').textContent=emoji;
+  document.getElementById('replayResultTitle').textContent=title;
+  document.getElementById('replayResultTitle').style.color=resultClass==='better'?C_GREEN:(resultClass==='worse'?C_RED:C_YELLOW);
+  document.getElementById('replayResultDiff').textContent=(diff<=0?'↓ ':'↑ ')+diffAbs+' point';
+  document.getElementById('replayResultDiff').className=resultClass;
+  document.getElementById('replayOldScore').textContent=replayOldScore+' point';
+  document.getElementById('replayNewScore').textContent=Math.min(100,Math.round(score))+' point';
+  document.getElementById('replayDistance').textContent=totalDistance.toFixed(1)+' km kørt';
+  document.getElementById('replaySummary').classList.remove('hidden');
+  replayOldScore=null;replayTripId=null;replayRoute=null;
+}
+function closeReplaySummary(){document.getElementById('replaySummary').classList.add('hidden');}
+function renderStats(){
+  var el=document.getElementById('statTotal');if(!el)return;
+  if(trips.length===0){
+    document.getElementById('statTotal').textContent='0';document.getElementById('statAvg').textContent='—';
+    document.getElementById('statBest').textContent='—';document.getElementById('statWorst').textContent='—';
+    document.getElementById('statDistance').textContent='0 km';document.getElementById('statDuration').textContent='0 min';
+    document.getElementById('weeklyChart').innerHTML='<div style="text-align:center;color:#9ca3af;padding:20px">Ingen data endnu</div>';return;
+  }
+  var total=trips.length,totalDist=0,totalDur=0,scores=[];
+  trips.forEach(function(t){totalDist+=parseFloat(t.distance)||0;totalDur+=t.duration||0;scores.push(t.score);});
+  var avg=Math.round(scores.reduce(function(a,b){return a+b;},0)/scores.length);
+  var best=Math.min.apply(null,scores);var worst=Math.max.apply(null,scores);
+  document.getElementById('statTotal').textContent=total;document.getElementById('statAvg').textContent=avg;
+  document.getElementById('statBest').textContent=best;document.getElementById('statWorst').textContent=worst;
+  document.getElementById('statDistance').textContent=totalDist.toFixed(1)+' km';
+  document.getElementById('statDuration').textContent=Math.floor(totalDur/60)+' min';renderWeeklyChart();
+}
+function renderWeeklyChart(){
+  var now=new Date();var weeks=[];
+  for(var i=5;i>=0;i--){var d=new Date(now);d.setDate(d.getDate()-(i*7));var weekStart=new Date(d);weekStart.setDate(d.getDate()-d.getDay());var weekEnd=new Date(weekStart);weekEnd.setDate(weekStart.getDate()+6);weeks.push({start:weekStart,end:weekEnd,label:weekStart.toLocaleDateString('da-DK',{day:'2-digit',month:'short'}),scores:[],avg:null});}
+  trips.forEach(function(t){var parts=t.date.match(/(\d+)\.\s*(\S+)/);if(parts){var day=parseInt(parts[1]);var monthNames=['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];var monthIdx=monthNames.indexOf(parts[2].toLowerCase());if(monthIdx>=0){var tripDate=new Date(now.getFullYear(),monthIdx,day);weeks.forEach(function(w){if(tripDate>=w.start&&tripDate<=w.end){w.scores.push(t.score);}});}}});
+  weeks.forEach(function(w){if(w.scores.length>0){w.avg=Math.round(w.scores.reduce(function(a,b){return a+b;},0)/w.scores.length);}});
+  var maxAvg=Math.max.apply(null,weeks.map(function(w){return w.avg||0;}));if(maxAvg<10)maxAvg=10;
+  var chartHTML=weeks.map(function(w){var height=w.avg?Math.round((w.avg/maxAvg)*90)+10:0;var barClass=w.avg?'':'empty';var barColor=w.avg?getScoreColor(w.avg):'#374151';return '<div class="chart-bar-wrap"><div class="chart-bar-score">'+(w.avg||'—')+'</div><div class="chart-bar '+barClass+'" style="height:'+height+'px;background:'+barColor+'"></div><div class="chart-label">'+w.label+'</div></div>';}).join('');
+  document.getElementById('weeklyChart').innerHTML=chartHTML;
+}
+function checkMotionSupport(){if(!window.DeviceMotionEvent){showError(' accelerometer');enableBtn.disabled=true;return false;}return true;}
+function showError(msg){errorMsg.textContent=msg;errorMsg.style.display='block';}
+function getColor(v){var a=Math.abs(v);if(a<2)return C_GREEN;if(a<4)return C_YELLOW;return C_RED;}
+function getScoreColor(s){if(s<30)return C_GREEN;if(s<60)return C_YELLOW;return C_RED;}
+function updateDisplay(x,y,z){xVal.textContent=x.toFixed(1);yVal.textContent=y.toFixed(1);zVal.textContent=z.toFixed(1);xVal.style.color=getColor(x);yVal.style.color=getColor(y);zVal.style.color=getColor(z-9.8);}
+function updateScore(){var cappedScore=Math.min(100,Math.round(score));scoreNum.textContent=cappedScore;scoreBar.style.width=cappedScore+'%';scoreNum.style.color=getScoreColor(score);scoreBar.style.background=getScoreColor(score);var s=cappedScore,label,emoji;if(s>=80){label='Fantastisk!';emoji='🟢';}else if(s>=50){label='God kørsel';emoji='🟡';}else if(s>0){label='Forbedringspotentiale';emoji='🟠';}else{label='Perfekt!';emoji='🟢';}scoreLabel.textContent=emoji+' '+label+': '+s+'/100';scoreLabel.style.color=getScoreColor(score);}
+function updateTimer(){if(!isRecording||!startTime)return;if(isCalibrating)return;var elapsed=Math.floor((Date.now()-startTime)/1000);var m=Math.floor(elapsed/60).toString().padStart(2,'0');var s=(elapsed%60).toString().padStart(2,'0');timer.textContent='\u231a '+m+':'+s;}
+function showTripSummary(){var s=Math.min(100,Math.round(score));var label,emoji,color;if(s>=80){label='Fantastisk kørsel!';emoji='🟢';color='#22c55e';}else if(s>=50){label='God kørsel';emoji='🟡';color='#eab308';}else if(s>0){label='Forbedringspotentiale';emoji='🟠';color='#f97316';}else{label='Perfekt kørsel!';emoji='🟢';color='#22c55e';}document.getElementById('tripEmoji').textContent=emoji;document.getElementById('tripMessage').textContent=label;document.getElementById('tripMessage').style.color=color;document.getElementById('tripScore').textContent=s+' point';document.getElementById('tripScore').style.color=color;var elapsed=startTime?Math.floor((Date.now()-startTime)/1000):0;var m=Math.floor(elapsed/60);document.getElementById('tripStats').textContent=totalDistance.toFixed(1)+' km \u00b7 '+m+' min';if(Notification.permission==='granted'){new Notification('Tur slut!',{body:label+' - '+s+' point, '+totalDistance.toFixed(1)+' km'});}document.getElementById('tripSummary').classList.remove('hidden');}
+function closeTripSummary(){document.getElementById('tripSummary').classList.add('hidden');}
+function updateGPS(position){var lat=position.coords.latitude;var lon=position.coords.longitude;var speed=position.coords.speed;if(speed!==null&&speed>0){speedVal.textContent=Math.round(speed*3.6)+' km/t';}else{speedVal.textContent='\u2014 km/t';}if(lastLat!==null&&lastLon!==null){var dist=getDistanceFromLatLonInKm(lastLat,lastLon,lat,lon);totalDistance+=dist;distVal.textContent=totalDistance.toFixed(1)+' km';}lastLat=lat;lastLon=lon;routeCoords.push([lat,lon]);if(map&&routeCoords.length>1){if(routeLine)map.removeLayer(routeLine);routeLine=L.polyline(routeCoords,{color:'#22c55e',weight:4}).addTo(map);map.fitBounds(routeLine.getBounds(),{padding:[20,20]});}}
+function getDistanceFromLatLonInKm(lat1,lon1,lat2,lon2){var R=6371;var dLat=deg2rad(lat2-lat1);var dLon=deg2rad(lon2-lon1);var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(deg2rad(lat1))*Math.cos(deg2rad(lat2))*Math.sin(dLon/2)*Math.sin(dLon/2);var c=2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));return R*c;}
+function deg2rad(deg){return deg*(Math.PI/180);}
+function saveTrip(){var duration=startTime?Math.floor((Date.now()-startTime)/1000):0;var trip={date:new Date().toLocaleDateString('da-DK',{day:'2-digit',month:'short'}),duration:duration,score:Math.round(score),distance:totalDistance.toFixed(1),route:routeCoords.slice()};trips.unshift(trip);if(trips.length>50)trips.pop();localStorage.setItem('niceDrive_trips',JSON.stringify(trips));renderHistory();}
+function drawGraph(){var w=graphCanvas.width=graphCanvas.offsetWidth*2;var h=graphCanvas.height=graphCanvas.offsetHeight*2;graphCtx.clearRect(0,0,w,h);var midY=h/2;var maxVal=10;function drawLine(history,color){if(history.length<2)return;graphCtx.strokeStyle=color;graphCtx.lineWidth=3;graphCtx.beginPath();for(var i=0;i<history.length;i++){var x=(i/MAX_HISTORY)*w;var y=midY-(history[i]/maxVal)*(h/2);if(i===0)graphCtx.moveTo(x,y);else graphCtx.lineTo(x,y);}graphCtx.stroke();}drawLine(xHistory,'#ef4444');drawLine(yHistory,'#eab308');drawLine(zHistory,'#22c55e');graphCtx.strokeStyle='#374151';graphCtx.lineWidth=1;graphCtx.beginPath();graphCtx.moveTo(0,midY);graphCtx.lineTo(w,midY);graphCtx.stroke();}
+function onMotion(event){var acc=event.accelerationIncludingGravity;if(!acc)return;var x=acc.x||0;var y=acc.y||0;var z=acc.z||9.8;if(isCalibrating){calibrationReadings.push({x:x,y:y,z:z});if(calibrationReadings.length>=20){baselineX=calibrationReadings.reduce(function(s,r){return s+r.x;},0)/calibrationReadings.length;baselineY=calibrationReadings.reduce(function(s,r){return s+r.y;},0)/calibrationReadings.length;baselineZ=calibrationReadings.reduce(function(s,r){return s+r.z;},0)/calibrationReadings.length;isCalibrating=false;timer.textContent='\u231a 00:00';status.textContent='Optager';}return;}var deltaX=x-baselineX;var deltaY=y-baselineY;var deltaZ=z-baselineZ;xHistory.push(deltaX);yHistory.push(deltaY);zHistory.push(deltaZ);if(xHistory.length>MAX_HISTORY){xHistory.shift();yHistory.shift();zHistory.shift();}updateDisplay(x,y,z);drawGraph();if(isRecording&&!isCalibrating){var penalty=0;if(Math.abs(deltaX)>1.5)penalty+=(Math.abs(deltaX)-1.5)*3;if(Math.abs(deltaY)>1.5)penalty+=(Math.abs(deltaY)-1.5)*4;if(Math.abs(deltaZ)>1.5)penalty+=(Math.abs(deltaZ)-1.5)*5;score=score+penalty;updateScore();if(navigator.vibrate){if(penalty>8)navigator.vibrate([100,50,100]);else if(penalty>4)navigator.vibrate(100);else if(penalty>2)navigator.vibrate(50);}}}
+enableBtn.addEventListener('click',function(){if(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function'){DeviceMotionEvent.requestPermission().then(function(response){if(response==='granted'){enableMotion();}else{showError(' Permission denied');}}).catch(function(e){showError(' Error: '+e.message);});}else{enableMotion();}});
+function enableMotion(){window.addEventListener('devicemotion',onMotion);enableBtn.style.display='none';startBtn.disabled=false;status.textContent='Klar';status.classList.add('active');if('Notification' in window&&Notification.permission==='default'){Notification.requestPermission();}}
+function startRecording(fromReplay){isRecording=true;calibrationReadings=[];isCalibrating=true;score=0;startTime=Date.now();xHistory=[];yHistory=[];zHistory=[];updateScore();if(navigator.geolocation){lastLat=null;lastLon=null;totalDistance=0;distVal.textContent='0.0 km';speedVal.textContent='\u2014 km/t';routeCoords=[];watchId=navigator.geolocation.watchPosition(updateGPS,null,{enableHighAccuracy:true});}document.getElementById('mapCard').style.display='block';if(!map&&typeof L!=="undefined"){map=L.map('map').setView([55.5,10.5],7);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);}if(routeLine){map.removeLayer(routeLine);routeLine=null;}timer.textContent='\u231a Kalibrerer...';status.textContent='Kalibrerer...';status.classList.add('active');startBtn.disabled=true;stopBtn.disabled=false;resetBtn.disabled=false;timerInterval=setInterval(updateTimer,1000);}
+startBtn.addEventListener('click',function(){if(isRecording)return;startRecording(false);});
+stopBtn.addEventListener('click',function(){if(!isRecording)return;isRecording=false;if(timerInterval){clearInterval(timerInterval);timerInterval=null;}status.textContent='Gemt';status.classList.remove('active');startBtn.disabled=false;stopBtn.disabled=true;resetBtn.disabled=true;if(isReplayMode){endReplay();}else{saveTrip();showTripSummary();}if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null;}document.getElementById('mapCard').style.display='none';});
+resetBtn.addEventListener('click',function(){if(!isRecording)return;score=0;updateScore();totalDistance=0;distVal.textContent='0.0 km';lastLat=null;lastLon=null;});
+checkMotionSupport();
+if(window.DeviceMotionEvent&&typeof DeviceMotionEvent.requestPermission!=='function'){enableMotion();}
+</script>
 </body>
 </html>
